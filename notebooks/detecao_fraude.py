@@ -264,3 +264,77 @@ best_threshold = threshold_df.loc[
 ]
 
 best_threshold
+#Curvas ROC e precisão-recall
+fpr, tpr, _ = roc_curve(y_test, proba_xgb)
+
+plt.figure(figsize=(7, 5))
+plt.plot(fpr, tpr, label=f"ROC-AUC = {roc_auc_score(y_test, proba_xgb):.3f}")
+plt.plot([0, 1], [0, 1], linestyle="--")
+plt.xlabel("Taxa de falsos positivos")
+plt.ylabel("Recall")
+plt.title("Curva ROC")
+plt.legend()
+plt.grid()
+plt.show()
+#Para a curva de precisão e recall:
+precision, recall, _ = precision_recall_curve(y_test, proba_xgb)
+
+plt.figure(figsize=(7, 5))
+plt.plot(recall, precision)
+plt.xlabel("Recall")
+plt.ylabel("Precisão")
+plt.title("Curva de precisão e recall")
+plt.grid()
+plt.show()
+
+#Undersampling e oversampling
+from imblearn.pipeline import Pipeline as ImbPipeline
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
+
+#Oversampling:
+oversampling_pipeline = ImbPipeline([
+    ("scaler", StandardScaler()),
+    ("sampler", RandomOverSampler(random_state=42)),
+    ("model", LogisticRegression(max_iter=1000))
+])
+
+oversampling_pipeline.fit(X_train, y_train)
+proba_over = oversampling_pipeline.predict_proba(X_test)[:, 1]
+
+#Undersampling:
+undersampling_pipeline = ImbPipeline([
+    ("scaler", StandardScaler()),
+    ("sampler", RandomUnderSampler(random_state=42)),
+    ("model", LogisticRegression(max_iter=1000))
+])
+
+undersampling_pipeline.fit(X_train, y_train)
+proba_under = undersampling_pipeline.predict_proba(X_test)[:, 1]
+
+#COmparando resultados da avaliação dos modelos com oversampling e undersampling
+pd.DataFrame([
+    avaliar_modelo("Oversampling", y_test, proba_over),
+    avaliar_modelo("Undersampling", y_test, proba_under)
+])
+
+#Explicabilidade com SHAP
+
+#XGBoost: TreeExplainer is the concrete SHAP implementation for tree models
+#and provides a useful, model-specific implementation of the explainer API.
+explainer = shap.TreeExplainer(xgb_model)
+shap_values = explainer(X_test)
+
+#Importância global:
+shap.plots.bar(shap_values)
+
+#Distribuição dos efeitos:
+shap.plots.beeswarm(shap_values)
+
+#Para explicar uma transação específica:
+indice = 0
+
+shap.plots.force(
+    shap_values[indice],
+    matplotlib=True
+)
