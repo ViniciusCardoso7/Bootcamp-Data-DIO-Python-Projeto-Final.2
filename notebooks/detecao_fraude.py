@@ -157,3 +157,110 @@ proba_xgb = xgb_model.predict_proba(X_test)[:, 1]
 pred_xgb = (proba_xgb >= 0.5).astype(int)
 #O eval_metric="aucpr" é coerente com um problema em que a classe positiva é rara.
 
+#AVALIAÇÃO DOS MODELOS
+def avaliar_modelo(nome, y_true, probabilidades, threshold=0.5):
+    predicoes = (probabilidades >= threshold).astype(int)
+
+    return {
+        "modelo": nome,
+        "limiar": threshold,
+        "precision_fraud": precision_score(
+            y_true, predicoes, zero_division=0
+        ),
+        "recall_fraud": recall_score(
+            y_true, predicoes, zero_division=0
+        ),
+        "f1_fraud": f1_score(
+            y_true, predicoes, zero_division=0
+        ),
+        "roc_auc": roc_auc_score(y_true, probabilidades),
+        "pr_auc": average_precision_score(y_true, probabilidades)
+    }
+#Comparando Modelos
+resultados = pd.DataFrame([
+    avaliar_modelo("Regressão Logística", y_test, proba_logistic),
+    avaliar_modelo("Random Forest", y_test, proba_rf),
+    avaliar_modelo("XGBoost", y_test, proba_xgb)
+])
+
+resultados.sort_values("recall_fraud", ascending=False)
+#relatório detalhado do modelo escolhido
+print(classification_report(
+    y_test,
+    (proba_xgb >= 0.5).astype(int),
+    target_names=["Normal", "Fraude"],
+    zero_division=0
+))
+#Matriz de confusão
+cm = confusion_matrix(
+    y_test,
+    (proba_xgb >= 0.5).astype(int)
+)
+
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predito")
+plt.ylabel("Real")
+plt.title("Matriz de confusão")
+plt.show()
+
+#Ajuste do limiar de decisão
+#O limiar padrão de 0,5 não precisa ser o melhor para fraude. Um limiar menor normalmente aumenta o recall, mas também pode aumentar os falsos positivos.
+thresholds = np.arange(0.05, 0.96, 0.05)
+
+threshold_results = []
+
+for threshold in thresholds:
+    predictions = (proba_xgb >= threshold).astype(int)
+
+    threshold_results.append({
+        "threshold": threshold,
+        "precision": precision_score(
+            y_test, predictions, zero_division=0
+        ),
+        "recall": recall_score(
+            y_test, predictions, zero_division=0
+        ),
+        "f1": f1_score(
+            y_test, predictions, zero_division=0
+        )
+    })
+
+threshold_df = pd.DataFrame(threshold_results)
+threshold_df
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    threshold_df["threshold"],
+    threshold_df["precision"],
+    marker="o",
+    label="Precisão"
+)
+
+plt.plot(
+    threshold_df["threshold"],
+    threshold_df["recall"],
+    marker="o",
+    label="Recall"
+)
+
+plt.plot(
+    threshold_df["threshold"],
+    threshold_df["f1"],
+    marker="o",
+    label="F1"
+)
+
+plt.xlabel("Limiar")
+plt.ylabel("Métrica")
+plt.title("Métricas por limiar de decisão")
+plt.legend()
+plt.grid()
+plt.show()
+#maximizar o F1
+best_threshold = threshold_df.loc[
+    threshold_df["f1"].idxmax(),
+    "threshold"
+]
+
+best_threshold
