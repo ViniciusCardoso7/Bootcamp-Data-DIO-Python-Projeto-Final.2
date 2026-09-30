@@ -1,0 +1,37 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset e arquivos locais
+*.csv
+*.zip
+*.parquet
+data/
+datasets/
+
+# Arquivos de configuração e segredos
+.env
+.env.*
+*.pem
+*.key
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.log
+
+# Configurações locais do VS Code
+.vscode/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

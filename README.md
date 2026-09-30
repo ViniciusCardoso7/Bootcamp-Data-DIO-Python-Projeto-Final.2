@@ -263,9 +263,9 @@ Execute as células na ordem, do início ao fim.
 ## Estrutura do projeto
 
 ```text
-credit-card-fraud-detection/
+Bootcamp-Data-DIO-Python-Projeto-Final.2/
 ├── notebooks/
-│   └── deteccao_fraude.ipynb
+│   └── deteccao_fraude_credit_card.ipynb
 ├── README.md
 ├── requirements.txt
 └── .gitignore
